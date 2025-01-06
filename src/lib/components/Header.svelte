@@ -1,19 +1,26 @@
 <script lang="ts">
     import { Navbar, NavBrand, NavLi, NavUl, NavHamburger, Dropdown, DropdownItem, DropdownDivider, DarkMode } from 'flowbite-svelte';
     import { ChevronDownOutline } from 'flowbite-svelte-icons';
-    import { page } from '$app/stores';
+    import { page } from '$app/state';
+    import { onMount } from "svelte";
     
-    let activeUrl = $derived($page.url.pathname)
+    import { collection, getDocs, doc, addDoc, updateDoc, deleteDoc } from 'firebase/firestore'
+    import {db} from '$lib/firebase/firebase'
 
-    let menu = [
-        { name: 'Home', href: '/' },
-        { name: 'Portfolio', href: '/portfolio' },
-        { name: 'About', href: '/about' },
-        { name: 'Admin', sub: [
-            {name: 'Proprieties', href: '/propeties'},
-            {name: 'Tenents', href: '/tenents'}
-        ]}
-    ]
+    let menu:any = $state()
+    onMount(async () => {
+
+		try {
+			const menuQuery = await getDocs(collection(db, 'Menu'));
+			menu = menuQuery.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+		} catch (e) {
+			console.log("PROBLEM TO CONNECT: " + e)
+		}
+	})
+
+    let activeUrl = $derived(page.url.pathname)
+
+    const company = {name: 'NosCorp', logo: 'https://w7.pngwing.com/pngs/985/67/png-transparent-blue-logo-circle-logo-symbol-font-templates-blue-angle-text-thumbnail.png'}
 
     let greeting = $state("")
     
@@ -31,7 +38,7 @@
     })
 </script>
 
-{#snippet navItems(name: string, href: any, sub: any)}
+{#snippet navItems(name: string, href: any, sub: [])}
     {#if href}
         <NavLi {href}>{name}</NavLi>
     {:else} 
@@ -39,7 +46,7 @@
             {name}<ChevronDownOutline class="w-6 h-6 ms-2 text-primary-800 dark:text-white inline" />
         </NavLi>
         <Dropdown {activeUrl} class="w-44 z-20">
-            {#each sub as {name, href}, i}
+            {#each sub as {href, name}, i}
                 <DropdownItem {href}>{name}</DropdownItem>
             {/each}
         </Dropdown>
@@ -48,8 +55,8 @@
 
 <Navbar>
     <NavBrand href="/">
-        <img src="" class="me-3 h-6 sm:h-9" alt="Company Logo" />
-        <span class="self-center whitespace-nowrap text-xl font-semibold dark:text-white">Company Name</span>
+        <img src={company.logo} class="me-3 h-6 sm:h-9" alt={company.name} />
+        <span class="self-center whitespace-nowrap text-xl font-semibold dark:text-white">{company.name}</span>
     </NavBrand>
     <NavHamburger />
     <NavUl {activeUrl}>
@@ -61,5 +68,5 @@
 </Navbar>
 
 <style>
-
+    
 </style>
